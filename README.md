@@ -13,11 +13,11 @@ nmap-open-ports-simple.sh nmap-results.xml
 192.168.1.200:445
 ```
 
-### nmap-open-ports-simple.sh
+### nmap-open-ports-long.sh
 Get table delimited table of IP, DNS name, Port, Protocol, Detected Service from Nmap XML. Requires `xmlstarlet`.
 
 ```
-nmap-open-ports-simple.sh nmap-results.xml
+nmap-open-ports-long.sh nmap-results.xml
 ```
 |               |                    |         |          |                         |
 | ------------- | ------------------ | ------- | -------- | ----------------------- |
