@@ -37,4 +37,4 @@ Takes targets (-t) in IP, FQDN, or CIDR format and combines them with ports (-p)
 
 Gets the Common Name and Subject Alternate Names from a certificate.
 
-Similar to GetNamesFromServerCert.py but for PowerShell. Parameters are `-Targets' and `-Ports`.
+Similar to GetNamesFromServerCert.py but for PowerShell. Parameters are `-Targets` and `-Ports`.
