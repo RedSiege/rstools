@@ -23,7 +23,7 @@ nmap-open-ports-long.sh nmap-results.xml
 | ------------- | ------------------ | ------- | -------- | ----------------------- |
 | 192.168.1.1   | alpha.redsiege.com | 22/tcp  | ssh      | OpenSSH 7.4protocol 2.0 |
 | 192.168.1.1   | alpha.redsiege.com | 443/tcp | ssl/http | nginx 1.12.2            |
-| 192.168.1.100 | alpha.redsiege.com | 22/tcp  | ssh      | OpenSSH 7.4protocol 2.0 |
+| 192.168.1.100 | bravo.redsiege.com | 22/tcp  | ssh      | OpenSSH 7.4protocol 2.0 |
     
 ## Web
 
