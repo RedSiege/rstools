@@ -14,7 +14,7 @@ nmap-open-ports-simple.sh nmap-results.xml
 ```
 
 ### nmap-open-ports-simple.sh
-Get table of IP, DNS name, Port, Protocol, Detected Service from Nmap XML. Requires `xmlstarlet`.
+Get table delimited table of IP, DNS name, Port, Protocol, Detected Service from Nmap XML. Requires `xmlstarlet`.
 
 ```
 nmap-open-ports-simple.sh nmap-results.xml
