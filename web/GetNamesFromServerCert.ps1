@@ -6,6 +6,10 @@ function Get-SSLNames {
         Access the targeted SSL/TLS server and extract names from the certificate
     .NOTES
         Author: Tim Medin, Red Siege, tim@redsiege.com
+    .LINK
+        https://github.com/RedSiege/rstools 
+    .LINK
+        https://redsiege.com
     .EXAMPLE
         Get-SSLNames 192.168.8.2
     .EXAMPLE

@@ -4,15 +4,18 @@
 This will will get the CN and any Subject alternate names from the hosts/port combinations provided.
 The target can be a CIDR range
 The search is done in a random order
+
+Available from: https://github.com/RedSiege/rstools
 """
 
 __author__ = "Tim Medin"
-__copyright__ = "Copyright 2017, Red Siege"
+__copyright__ = "Copyright 2018, Red Siege"
 __credits__ = ["Tim Medin"]
 __license__ = "GPL"
 __version__ = "1.0.0"
 __maintainer__ = "Tim Medin"
 __email__ = "tim@redsiege.com"
+__contact__ = "tim@redsiege.com"
 __status__ = "Production"
 
 import ssl
