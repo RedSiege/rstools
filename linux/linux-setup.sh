@@ -8,14 +8,14 @@
 #repository      :https://github.com/RedSiege/rstools
 #notes           :Must be run as root
 
-USERS="root tm"
+USERS="root tm mike"
 
 sudo apt update
 sudo apt upgrade -y
 sudo apt autoremove -y
 
 # add packages
-sudo apt install tmux screen xclip
+sudo apt -y install tmux screen xclip nmap nikto python-pip
 
 for U in $USERS
 do
@@ -31,6 +31,8 @@ do
 
 	# get path to ~/.bashrc for user
 	BASHRC=`eval echo ~$1`/.bashrc
+
+	pip install paramiko
 
 	while read LINE; do
 		grep "$LINE" $BASHRC >/dev/null || echo "$LINE" >> $BASHRC
