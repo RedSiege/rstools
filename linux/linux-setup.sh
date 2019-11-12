@@ -10,12 +10,14 @@
 
 USERS="root user1 user2"
 
+sudo apt-add-repository ppa:webupd8team/java
+
 sudo apt update
 sudo apt upgrade -y
 sudo apt autoremove -y
 
 # add packages
-sudo apt -y install tmux screen xclip nmap nikto python-pip
+sudo apt -y install tmux screen xclip nmap nikto python-pip oracle-java8-installer iptables-persistent
 
 # setup motd
 echo 'ClRoaXMgc3lzdGVtIGlzIG93bmVkIGJ5IFJlZCBTaWVnZSwgTExDLiAoY29udGFjdEByZWRzaWVn
@@ -46,7 +48,7 @@ do
 	id -u $U 1>/dev/null 2>/dev/null
 	if [ $? -eq 1 ]; then
 		echo adding user $U
-		sudo useradd -m $U
+		sudo useradd -m $U -s /bin/bash
 		echo adding user $U to sudo group
 		sudo usermod -aG sudo $U
 	fi
@@ -63,8 +65,8 @@ do
 		alias lh='ls -hal'
 		alias pbcopy='xclip -selection clipboard'
 		alias pbpaste='xclip -selection clipboard -o'
-		alias curl='curl -sA "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"' # Make curl silent when piping output
-		alias curl='curl -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"' # Make curl not use a sketch user-agent
+		#alias curl='curl -sA "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"' # Make curl silent when piping output
+		alias curl='curl -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"' # Make curl not use a sketch user-agent
 		alias ping='ping -n'
 		alias grepc='grep --color=always'
 		alias no_blank_lines='grep -v "^\s*$"'
