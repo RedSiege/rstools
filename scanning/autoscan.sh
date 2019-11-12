@@ -27,7 +27,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     fi
 fi
 
-masscan --ports 0-65535 --rate $MASSCANRATE --src-port=61000 --output-format binary --output-filename $FILEBASE.masscan -iL $*
+masscan --ports 0-65535 --rate $MASSCANRATE --src-port=61000 --output-format binary --output-filename $FILEBASE.masscan -iL $1
 
 # convert to grepable
 masscan --open --readscan $FILEBASE.masscan -oG $FILEBASE.grep
@@ -53,15 +53,23 @@ PORTS=`awk -v ORS=, '
         f=$1+1
         next }
     f!=$1{
-        print o "-" f-1
+        if (o==f-1) {
+            print o
+        } else {
+            print o "-" f-1
+        }
         o=$1
-        f=$1+1 
+        f=$1+1
         next }
     {
-        f=f+1 
+        f=f+1
         }
     END{
-        print o "-" $1 }
+        if (o==f-1) {
+            print o
+        } else {
+            print o "-" f-1
+        }}
 ' $FILEBASE-ports.txt | sed 's/,$//'`
 
 COMMAND="nmap $NMAPOPTIONS -oA $FILEBASE -iL $FILEBASE-hosts.txt -p $PORTS"
