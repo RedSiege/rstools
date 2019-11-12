@@ -6,8 +6,8 @@ NMAPOPTIONS='-sV -T4 -sC'
 
 # run the script with the list of target IPs or Networks
 
-if [ $# -eq 0 ] || [[ "$*" == *-h* ]] || [[ "$*" == *--help* ]]; then
-    echo "Usage: $0 ip_or_network..."
+if [ $# -ne 1 ] || [[ "$*" == *-h* ]] || [[ "$*" == *--help* ]]; then
+    echo "Usage: $0 targetfile.txt"
     exit 0
 fi
 
@@ -27,7 +27,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     fi
 fi
 
-masscan --ports 0-65535 --rate $MASSCANRATE --src-port=61000 --output-format binary --output-filename $FILEBASE.masscan $*
+masscan --ports 0-65535 --rate $MASSCANRATE --src-port=61000 --output-format binary --output-filename $FILEBASE.masscan -iL $*
 
 # convert to grepable
 masscan --open --readscan $FILEBASE.masscan -oG $FILEBASE.grep
