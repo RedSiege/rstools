@@ -1,5 +1,6 @@
 #!/bin/bash
-FILEBASE=$(date +%F_%H-%M-%S)
+#FILEBASE=$(date +%F_%H-%M-%S)
+FILEBASE=scan #-$(date +%F_%H-%M-%S)
 MASSCANRATE=15000
 NMAPOPTIONS='-sV -T4 -sC'
 
@@ -28,18 +29,40 @@ fi
 
 masscan --ports 0-65535 --rate $MASSCANRATE --src-port=61000 --output-format binary --output-filename $FILEBASE.masscan $*
 
+# convert to grepable
+masscan --open --readscan $FILEBASE.masscan -oG $FILEBASE.grep
+echo
+
 # get the ports
-masscan --readscan $FILEBASE.masscan | awk -F'[ /]' '{print $4}' | sort -unk 1 > $FILEBASE-ports.txt
+grep /open/ $FILEBASE.grep | cut -d ' ' -f 4 | cut -d / -f 1 | sort -nk 1 | uniq > $FILEBASE-ports.txt
+echo "`wc -l < $FILEBASE-ports.txt` open ports"
 
 # save the live hosts hosts
-masscan --readscan $FILEBASE.masscan | awk '{print $6}' | sort -u > $FILEBASE-hosts.txt
+grep /open/ $FILEBASE.grep | cut -d ' ' -f 2 | sort -uV > $FILEBASE-hosts.txt
+echo "`wc -l < $FILEBASE-hosts.txt` live hosts"
 
-echo
-echo "Found `wc -l $FILEBASE-hosts.txt | awk '{print $1}'` live hosts"
-echo "Found `wc -l $FILEBASE-ports.txt | awk '{print $1}'` listening ports"
-echo
+# host-port
+grep /open/ $FILEBASE.grep | cut -d/ -f 1 | cut -d ' ' -f 2,4 | sed -e 's/ /:/g' | sort -uV > $FILEBASE-host-port.txt
+echo "`wc -l < $FILEBASE-host-port.txt` listening services"
 
-PORTS=`awk -v ORS=, '{ print $1 }' $FILEBASE-ports.txt | sed 's/,$//'`
+# condense the ports to a range
+#PORTS=`awk -v ORS=, '{ print $1 }' $FILEBASE-ports.txt | sed 's/,$//'`
+PORTS=`awk -v ORS=, '
+    NR==1{
+        o=$1
+        f=$1+1
+        next }
+    f!=$1{
+        print o "-" f-1
+        o=$1
+        f=$1+1 
+        next }
+    {
+        f=f+1 
+        }
+    END{
+        print o "-" $1 }
+' $FILEBASE-ports.txt | sed 's/,$//'`
 
 COMMAND="nmap $NMAPOPTIONS -oA $FILEBASE -iL $FILEBASE-hosts.txt -p $PORTS"
 echo "Running: $COMMAND"
