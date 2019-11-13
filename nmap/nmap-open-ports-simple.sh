@@ -14,5 +14,5 @@ if [ -z "$1" ]; then
   exit
 fi
 
-xmlstarlet sel -t -m '//port/state[@state="open"]/parent::port' -v 'ancestor::host/address[not(@addrtype="mac")]/@addr' -o : -v './@portid' -n $1
+xmlstarlet sel -t -m '//port/state[@state="open"]/parent::port' -v 'ancestor::host/address[not(@addrtype="mac")]/@addr' -o : -v './@portid' -n "$1"
 
