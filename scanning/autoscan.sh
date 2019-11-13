@@ -1,6 +1,6 @@
 #!/bin/bash
 #FILEBASE=$(date +%F_%H-%M-%S)
-FILEBASE=scan #-$(date +%F_%H-%M-%S)
+FILEBASE=scan-$(date +%F_%H-%M-%S)
 MASSCANRATE=15000
 NMAPOPTIONS='-sV -T4 -sC'
 
