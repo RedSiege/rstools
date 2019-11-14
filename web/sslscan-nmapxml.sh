@@ -53,7 +53,7 @@ do
                 fi
         done
         # Weak Ciphers
-        WEAKCIPHERS=`xmlstarlet sel -T -t -m "//ssltest/cipher[contains(@cipher,'NULL') or contains(@cipher,'EXP') or contains(@cipher,'ADH') or contains(@cipher,'AECDH') and not(contains(@sslversion,'SSL'))]" -v @sslversion -o ":" -v @cipher -n -b $FILENAME | cut -d: -f 2`
+        WEAKCIPHERS=`xmlstarlet sel -T -t -m "//ssltest/cipher[contains(@cipher,'NULL') or contains(@cipher,'EXP') or contains(@cipher,'ADH') or contains(@cipher,'AECDH') and not(contains(@sslversion,'SSL'))]" -v @sslversion -o ":" -v @cipher -n -b $FILENAME | cut -d: -f 2 | sort -u`
         FIRST=true
         for WEAKCIPHER_TEMP in $WEAKCIPHERS
         do
@@ -66,7 +66,7 @@ do
         done
 
         # Medium Strength Ciphers
-        MEDIUMCIPHERS=`xmlstarlet sel -T -t -m "//ssltest/cipher[contains(@cipher,'DES') or contains(@cipher,'RC4') or contains(@cipher,'ADH') or contains(@cipher,'AECDH') and not(contains(@sslversion,'SSL'))]" -v @sslversion -o ":" -v @cipher -n -b $FILENAME | cut -d: -f 2`
+        MEDIUMCIPHERS=`xmlstarlet sel -T -t -m "//ssltest/cipher[contains(@cipher,'DES') or contains(@cipher,'RC4') or contains(@cipher,'ADH') or contains(@cipher,'AECDH') and not(contains(@sslversion,'SSL'))]" -v @sslversion -o ":" -v @cipher -n -b $FILENAME | cut -d: -f 2 | sort -u`
         FIRST=true
         for MEDIUMCIPHER_TEMP in $MEDIUMCIPHERS
         do
