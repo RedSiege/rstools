@@ -36,7 +36,7 @@ do
         # expired
         grep '<expired>true</expired>' $FILENAME >/dev/null && EXPIRED="$EXPIRED^$TARGET"
         # sha1 sig
-        grep -ie '<signature-algorithm>.*sha1.*</signature-algorithm>' $FILENAME >/dev/null && SHA1SIG="$SHA1SIG^$TARGET"
+        grep -ie '<signature-algorithm>.*(sha1|md5).*</signature-algorithm>' $FILENAME >/dev/null && SHA1SIG="$SHA1SIG^$TARGET"
         # Weak RSA Length
         WEAKRSA_TEMP=`xmlstarlet sel -T -t -m "///certificate/pk[@bits<2048]" -v @bits $FILENAME`
         [[ ! -z $WEAKRSA_TEMP ]] && WEAKRSA="$WEAKRSA^$TARGET $WEAKRSA_TEMP bits RSA"
