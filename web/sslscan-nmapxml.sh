@@ -94,7 +94,7 @@ echo
 echo "Weak RSA"
 [ ! -z "$WEAKRSA" ] && echo "${WEAKRSA:1}" | tr '^' '\n' | sort -uV || echo None
 echo
-echo "Deprected Protocols"
+echo "Deprecated Protocols"
 [ ! -z "$DEPPROTO" ] && echo "${DEPPROTO:1}" | tr '^' '\n' | sort -uV || echo None
 echo
 echo "Weak Ciphers"
