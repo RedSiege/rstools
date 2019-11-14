@@ -35,8 +35,9 @@ do
         grep '<self-signed>true</self-signed>' $FILENAME >/dev/null && SELFSIGNED="$SELFSIGNED^$TARGET"
         # expired
         grep '<expired>true</expired>' $FILENAME >/dev/null && EXPIRED="$EXPIRED^$TARGET"
-        # sha1 sig
-        grep -ie '<signature-algorithm>.*(sha1|md5).*</signature-algorithm>' $FILENAME >/dev/null && SHA1SIG="$SHA1SIG^$TARGET"
+        # weak sig
+        grep -iE '<signature-algorithm>.*sha1.*</signature-algorithm>' $FILENAME >/dev/null && WEAKSIG="$WEAKSIG^$TARGET SHA1 Certificate Signature"
+        grep -iE '<signature-algorithm>.*md5.*</signature-algorithm>' $FILENAME >/dev/null && WEAKSIG="$WEAKSIG^$TARGET MD5 Certificate Signature"
         # Weak RSA Length
         WEAKRSA_TEMP=`xmlstarlet sel -T -t -m "///certificate/pk[@bits<2048]" -v @bits $FILENAME`
         [[ ! -z $WEAKRSA_TEMP ]] && WEAKRSA="$WEAKRSA^$TARGET $WEAKRSA_TEMP bits RSA"
@@ -86,6 +87,9 @@ echo "Self-signed"
 echo
 echo "Expired"
 [ ! -z "$EXPIRED" ] && echo "${EXPIRED:1}" | tr '^' '\n' | sort -uV || echo None
+echo
+echo "Weak Signature"
+[ ! -z "$WEAKSIG" ] && echo "${WEAKSIG:1}" | tr '^' '\n' | sort -uV || echo None
 echo
 echo "Weak RSA"
 [ ! -z "$WEAKRSA" ] && echo "${WEAKRSA:1}" | tr '^' '\n' | sort -uV || echo None
