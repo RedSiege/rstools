@@ -42,7 +42,7 @@ xmlstarlet sel -T -t \
         | cut -d: -f 2
 
 xmlstarlet sel -T -t \
-        -i "//ssltest/cipher[contains(@cipher,'RC4') or contains(@cipher,'RC4')]" -o 'Yellow Ciphers' -n -b \
+        -i "//ssltest/cipher[(contains(@cipher,'RC4') or contains(@cipher,'RC4')) and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -o 'Yellow Ciphers' -n -b \
         $FILENAME
 xmlstarlet sel -T -t \
         -m "//ssltest/cipher[(contains(@cipher,'RC4') or contains(@cipher,'RC4')) and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -v @sslversion -o ":" -v @cipher -n -b \
