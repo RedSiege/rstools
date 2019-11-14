@@ -34,7 +34,7 @@ xmlstarlet sel -T -t \
         $FILENAME \
         | sort -u
 xmlstarlet sel -T -t \
-        -i "//ssltest/cipher[contains(@cipher,'NULL') or contains(@cipher,'EXP') or contains(@cipher,'ADH') or contains(@cipher,'AECDH') and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -o 'Red Ciphers' -n -b \
+        -i "//ssltest/cipher[contains(@cipher,'NULL') or contains(@cipher,'EXP') or contains(@cipher,'ADH') or contains(@cipher,'AECDH') and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -o 'Weak Ciphers' -n -b \
         $FILENAME
 xmlstarlet sel -T -t \
         -m "//ssltest/cipher[contains(@cipher,'NULL') or contains(@cipher,'EXP') or contains(@cipher,'ADH') or contains(@cipher,'AECDH') and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -v @sslversion -o ":" -v @cipher -n -b \
@@ -42,9 +42,9 @@ xmlstarlet sel -T -t \
         | cut -d: -f 2
 
 xmlstarlet sel -T -t \
-        -i "//ssltest/cipher[(contains(@cipher,'RC4') or contains(@cipher,'RC4')) and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -o 'Yellow Ciphers' -n -b \
+        -i "//ssltest/cipher[(contains(@cipher,'DES') or contains(@cipher,'RC4')) and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -o 'Medium Strength Ciphers' -n -b \
         $FILENAME
 xmlstarlet sel -T -t \
-        -m "//ssltest/cipher[(contains(@cipher,'RC4') or contains(@cipher,'RC4')) and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -v @sslversion -o ":" -v @cipher -n -b \
+        -m "//ssltest/cipher[(contains(@cipher,'DES') or contains(@cipher,'RC4')) and (contains(@sslversion,'TLSv1.0') or contains(@sslversion,'TLSv1.1') or contains(@sslversion,'TLSv1.2'))]" -v @sslversion -o ":" -v @cipher -n -b \
         $FILENAME \
         | cut -d: -f 2 | sort -u
