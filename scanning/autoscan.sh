@@ -35,7 +35,7 @@ echo
 
 # get the ports
 grep /open/ $FILEBASE.grep | cut -d ' ' -f 4 | cut -d / -f 1 | sort -nk 1 | uniq > $FILEBASE-ports.txt
-echo "`wc -l < $FILEBASE-ports.txt` open ports"
+echo "`wc -l < $FILEBASE-ports.txt` unique open ports across all hosts"
 
 # save the live hosts hosts
 grep /open/ $FILEBASE.grep | cut -d ' ' -f 2 | sort -uV > $FILEBASE-hosts.txt
