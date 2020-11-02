@@ -27,6 +27,8 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     fi
 fi
 
+echo "Running: masscan --ports 0-65535 --rate ${MASSCANRATE} --src-port=61000 --output-format binary --output-filename ${FILEBASE}.masscan -iL ${1}"
+
 masscan --ports 0-65535 --rate $MASSCANRATE --src-port=61000 --output-format binary --output-filename $FILEBASE.masscan -iL $1
 
 # convert to grepable
