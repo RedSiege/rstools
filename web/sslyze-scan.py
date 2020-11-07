@@ -195,7 +195,7 @@ def main():
             
 
     for t in targets:
-        CheckHost(t[0], t[1])
+        CheckHosts(t[0], t[1])
 
 if __name__ == '__main__':
     main()
