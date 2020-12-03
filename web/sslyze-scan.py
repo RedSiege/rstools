@@ -29,7 +29,10 @@ def NmapXmlToTargets(nxml):
         print(stderr)
         sys.exit
     targets = []
-    for target in stdout.decode('ascii').strip().split('\n'):
+    output = stdout.decode('ascii').strip()
+    if len(output) == 0:
+        return []
+    for target in output.split('\n'):
         host, port = target.split(':')
         targets.append((host,int(port)))
     return targets
@@ -193,6 +196,8 @@ def main():
         for nxml in args.nmapxmls:
             targets.extend(NmapXmlToTargets(nxml.name))
             
+    if len(targets) == 0:
+        print('No targets')
 
     for t in targets:
         CheckHosts(t[0], t[1])
