@@ -199,8 +199,7 @@ def main():
     if len(targets) == 0:
         print('No targets')
 
-    for t in targets:
-        CheckHosts(t[0], t[1])
+    CheckHosts(targets)
 
 if __name__ == '__main__':
     main()
