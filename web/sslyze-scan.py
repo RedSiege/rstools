@@ -79,7 +79,7 @@ def CheckHosts(targets, export=False):
             'ip': r.server_info.server_location.ip_address,
             'port': r.server_info.server_location.port,
             'print': (r.server_info.server_location.ip_address + ":" + str(r.server_info.server_location.port)),
-            'result': server_scan_result
+            'result': r
         })
 
     if export:
