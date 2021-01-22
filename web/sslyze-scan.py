@@ -5,6 +5,7 @@ import datetime
 
 try:
     from sslyze import *
+    import sslyze.errors
 except:
     print("""
 Missing module "sslyze". Install it with the following commands:
@@ -64,10 +65,13 @@ def CheckHosts(targets, export=False):
         # Do connectivity testing to ensure SSLyze is able to connect
         try:
             server_info = ServerConnectivityTester().perform(server_location)
-        except ConnectionToServerFailed as e:
+        except sslyze.errors.ConnectionToServerTimedOut as e:
             # Could not connect to the server; abort
-            print(f"Error connecting to {server_location}: {e.error_message}")
-            return
+            #print(f"Error connecting to {server_location}: {e.error_message}")
+            print(f"Error connecting to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+            continue
+        except Exception as e:
+            print(f"Error connecting to {target}: \n{e.error_message}")
 
         server_scan_req = ServerScanRequest(server_info=server_info, scan_commands=cmds)
         scanner.queue_scan(server_scan_req)
