@@ -10,14 +10,16 @@
 
 USERS="root user1 user2"
 
-sudo apt-add-repository ppa:webupd8team/java
-
 sudo apt update
 sudo apt upgrade -y
 sudo apt autoremove -y
 
 # add packages
-sudo apt -y install tmux screen xclip nmap nikto python-pip oracle-java8-installer iptables-persistent
+sudo apt -y install tmux screen xclip nmap nikto python-pip iptables-persistent xmlstarlet openjdk-11-jdk
+
+#Make OpenJDK 11 the default
+# ref https://cobaltstrike.com/help-java-dependency
+sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
 
 # setup motd
 echo 'ClRoaXMgc3lzdGVtIGlzIG93bmVkIGJ5IFJlZCBTaWVnZSwgTExDLiAoY29udGFjdEByZWRzaWVn
@@ -55,8 +57,6 @@ do
 
 	# get path to ~/.bashrc for user
 	BASHRC=`eval echo ~$1`/.bashrc
-
-	pip install paramiko
 
 	while read LINE; do
 		grep "$LINE" $BASHRC >/dev/null || echo "$LINE" >> $BASHRC

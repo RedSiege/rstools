@@ -1,5 +1,4 @@
-#!env python3
-
+#!/usr/bin/env python3
 import sys
 import argparse
 import datetime
@@ -156,7 +155,6 @@ def CheckHosts(targets, export=False):
         for proto in all_protos:
             for cipher in r['result'].scan_commands_results[proto].accepted_cipher_suites:
                 name = cipher.cipher_suite.openssl_name
-                print(name)
                 if 'DES' in name or 'RC4' in name:
                     ciphers.append(name)
         if len(ciphers):
