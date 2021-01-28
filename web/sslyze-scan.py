@@ -3,6 +3,8 @@ import sys
 import argparse
 import datetime
 
+GROUPSIZE = 30
+
 try:
     from sslyze import *
     import sslyze.errors
@@ -19,6 +21,9 @@ try:
 except:
     print('Missing module xmlstarlet. Please install with:\n  pip install --upgrade xmlstarlet')
     sys.exit()
+
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 def NmapXmlToTargets(nxml):
     from subprocess import Popen, PIPE
@@ -55,50 +60,56 @@ def CheckHosts(targets, export=False):
         ScanCommand.ROBOT,
     ]
 
-    # queue the scanners
-    scanner = Scanner()
-
-    for target in targets:
-        host, port = target
-        server_location = ServerNetworkLocationViaDirectConnection.with_ip_address_lookup(host, port)
-
-        # Do connectivity testing to ensure SSLyze is able to connect
-        try:
-            server_info = ServerConnectivityTester().perform(server_location)
-        except sslyze.errors.ConnectionToServerTimedOut as e:
-            # Could not connect to the server; abort
-            print(f"Error connecting to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
-            continue
-        except sslyze.errors.ServerRejectedConnection as e:
-            # Could not connect to the server; abort
-            print(f"Connection rejected to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
-            continue
-        except sslyze.errors.ServerTlsConfigurationNotSupported as e:
-            # Could not connect to the server; abort
-            print(f"TLS Configuration not supported {server_location.hostname} {server_location.ip_address}: {e.error_message}")
-            continue
-        except sslyze.errors.ConnectionToServerFailed as e:
-            # Could not connect to the server; abort
-            print(f"Connection to server failed {server_location.hostname} {server_location.ip_address}: {e.error_message}")
-            continue
-        except KeyboardInterrupt:
-            sys.exit()
-        except:
-            e = sys.exc_info()[0]
-            print(f"Error connecting to {target}: \n{e}")
-            continue
-
-        server_scan_req = ServerScanRequest(server_info=server_info, scan_commands=cmds)
-        scanner.queue_scan(server_scan_req)
-
     results = []
-    for r in scanner.get_results():
-        results.append({
-            'ip': r.server_info.server_location.ip_address,
-            'port': r.server_info.server_location.port,
-            'print': (r.server_info.server_location.ip_address + ":" + str(r.server_info.server_location.port)),
-            'result': r
-        })
+
+    for chunk in chunker(targets, GROUPSIZE):
+        # this is an asyncronous scanner, but it has a memory leak so it is being caller serially
+        # Yes, Scanner() has options to reduce the number of targets, but the propblem still occurs
+        scanner = Scanner()
+
+        # Chunking so the scanner can be nuked and restarted
+        for host,port in chunk:
+            # this is an asyncronous scanner, but it has a memory leak so it is being caller serially
+            scanner = Scanner()
+
+            server_location = ServerNetworkLocationViaDirectConnection.with_ip_address_lookup(host, port)
+
+            # Do connectivity testing to ensure SSLyze is able to connect
+            try:
+                server_info = ServerConnectivityTester().perform(server_location)
+            except sslyze.errors.ConnectionToServerTimedOut as e:
+                # Could not connect to the server; abort
+                print(f"Error connecting to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+                continue
+            except sslyze.errors.ServerRejectedConnection as e:
+                # Could not connect to the server; abort
+                print(f"Connection rejected to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+                continue
+            except sslyze.errors.ServerTlsConfigurationNotSupported as e:
+                # Could not connect to the server; abort
+                print(f"TLS Configuration not supported {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+                continue
+            except sslyze.errors.ConnectionToServerFailed as e:
+                # Could not connect to the server; abort
+                print(f"Connection to server failed {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+                continue
+            except KeyboardInterrupt:
+                sys.exit()
+            except:
+                e = sys.exc_info()[0]
+                print(f"Error connecting to {target}: \n{e}")
+                continue
+
+            server_scan_req = ServerScanRequest(server_info=server_info, scan_commands=cmds)
+            scanner.queue_scan(server_scan_req)
+
+        for r in scanner.get_results():
+            results.append({
+                'ip': r.server_info.server_location.ip_address,
+                'port': r.server_info.server_location.port,
+                'print': (r.server_info.server_location.ip_address + ":" + str(r.server_info.server_location.port)),
+                'result': r
+            })
 
     if export:
         for i, r in enumerate(results):
