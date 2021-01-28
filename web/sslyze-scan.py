@@ -67,11 +67,26 @@ def CheckHosts(targets, export=False):
             server_info = ServerConnectivityTester().perform(server_location)
         except sslyze.errors.ConnectionToServerTimedOut as e:
             # Could not connect to the server; abort
-            #print(f"Error connecting to {server_location}: {e.error_message}")
             print(f"Error connecting to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
             continue
-        except Exception as e:
-            print(f"Error connecting to {target}: \n{e.error_message}")
+        except sslyze.errors.ServerRejectedConnection as e:
+            # Could not connect to the server; abort
+            print(f"Connection rejected to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+            continue
+        except sslyze.errors.ServerTlsConfigurationNotSupported as e:
+            # Could not connect to the server; abort
+            print(f"TLS Configuration not supported {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+            continue
+        except sslyze.errors.ConnectionToServerFailed as e:
+            # Could not connect to the server; abort
+            print(f"Connection to server failed {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+            continue
+        except KeyboardInterrupt:
+            sys.exit()
+        except:
+            e = sys.exc_info()[0]
+            print(f"Error connecting to {target}: \n{e}")
+            continue
 
         server_scan_req = ServerScanRequest(server_info=server_info, scan_commands=cmds)
         scanner.queue_scan(server_scan_req)
