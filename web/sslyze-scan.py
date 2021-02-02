@@ -3,7 +3,7 @@ import sys
 import argparse
 import datetime
 
-GROUPSIZE = 30
+GROUPSIZE = 20
 
 try:
     from sslyze import *
@@ -43,7 +43,7 @@ def NmapXmlToTargets(nxml):
     return targets
 
 
-def CheckHosts(targets, export=False):
+def CheckHosts(targets, verbose=False):
     cmds = [ # see list here: https://nabla-c0d3.github.io/sslyze/documentation/available-scan-commands.html
         ScanCommand.CERTIFICATE_INFO,
         ScanCommand.SSL_2_0_CIPHER_SUITES,
@@ -69,8 +69,9 @@ def CheckHosts(targets, export=False):
 
         # Chunking so the scanner can be nuked and restarted
         for host,port in chunk:
-            # this is an asyncronous scanner, but it has a memory leak so it is being caller serially
-            scanner = Scanner()
+
+            if verbose:
+                print(f'Testing {host}:{port}')
 
             server_location = ServerNetworkLocationViaDirectConnection.with_ip_address_lookup(host, port)
 
@@ -79,25 +80,25 @@ def CheckHosts(targets, export=False):
                 server_info = ServerConnectivityTester().perform(server_location)
             except sslyze.errors.ConnectionToServerTimedOut as e:
                 # Could not connect to the server; abort
-                print(f"Error connecting to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+                print(f'Error connecting to {server_location.hostname} {server_location.ip_address}: {e.error_message}')
                 continue
             except sslyze.errors.ServerRejectedConnection as e:
                 # Could not connect to the server; abort
-                print(f"Connection rejected to {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+                print(f'Connection rejected to {server_location.hostname} {server_location.ip_address}: {e.error_message}')
                 continue
             except sslyze.errors.ServerTlsConfigurationNotSupported as e:
                 # Could not connect to the server; abort
-                print(f"TLS Configuration not supported {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+                print(f'TLS Configuration not supported {server_location.hostname} {server_location.ip_address}: {e.error_message}')
                 continue
             except sslyze.errors.ConnectionToServerFailed as e:
                 # Could not connect to the server; abort
-                print(f"Connection to server failed {server_location.hostname} {server_location.ip_address}: {e.error_message}")
+                print(f'Connection to server failed {server_location.hostname} {server_location.ip_address}: {e.error_message}')
                 continue
             except KeyboardInterrupt:
                 sys.exit()
             except:
                 e = sys.exc_info()[0]
-                print(f"Error connecting to {target}: \n{e}")
+                print(f'Error connecting to {target}: \n{e}')
                 continue
 
             server_scan_req = ServerScanRequest(server_info=server_info, scan_commands=cmds)
@@ -107,26 +108,29 @@ def CheckHosts(targets, export=False):
             results.append({
                 'ip': r.server_info.server_location.ip_address,
                 'port': r.server_info.server_location.port,
-                'print': (r.server_info.server_location.ip_address + ":" + str(r.server_info.server_location.port)),
+                'print': (r.server_info.server_location.ip_address + ':' + str(r.server_info.server_location.port)),
                 'result': r
             })
 
-    if export:
-        for i, r in enumerate(results):
-            with open(f"{r['print']}-{i}.json", 'w') as f:
-                f.write(json.dumps(asdict(r['result']), cls=sslyze.JsonEncoder))
+            if verbose:
+                print('Tested ' + r.server_info.server_location.ip_address + ':' + str(r.server_info.server_location.port))
+
+    #if export:
+    #    for i, r in enumerate(results):
+    #        with open(f"{r['print']}-{i}.json", 'w') as f:
+    #            f.write(json.dumps(asdict(r['result']), cls=sslyze.JsonEncoder))
 
 
     # Self-Signed
-    print("\nSelf-Signed Certificate:")
+    print('\nSelf-Signed Certificate:')
     for r in results:
-        if r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string and "self signed certificate" in r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string:
+        if r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string and 'self signed certificate' in r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string:
                 print(r['print'])
 
     # Deprecated Protocols - Report up to TLS 1.1
     # In the future we may need to add ScanCommand.TLS_1_2_CIPHER_SUITES and ScanCommand.TLS_1_3_CIPHER_SUITES
     deprecated_protos = [ScanCommand.SSL_2_0_CIPHER_SUITES, ScanCommand.SSL_3_0_CIPHER_SUITES, ScanCommand.TLS_1_0_CIPHER_SUITES, ScanCommand.TLS_1_1_CIPHER_SUITES]
-    print("\nDeprecated Protocols:")
+    print('\nDeprecated Protocols:')
     for r in results:
         protos = []
         for proto in deprecated_protos:
@@ -137,28 +141,28 @@ def CheckHosts(targets, export=False):
             print(r['print'] + '\t' + ', '.join(protos))
 
     # Expired
-    print("\nExpired Certificates:")
+    print('\nExpired Certificates:')
     for r in results:
         if datetime.datetime.now() > r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].not_valid_after:
             print(r['print'])
 
 
     # Weak Signature
-    print("\nSHA1 Signature: ")
+    print('\nSHA1 Signature:')
     for r in results:
         if r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].signature_hash_algorithm.name in ['sha1', 'md5']:
             print(r['print'])
     
 
     # Weak RSA Length < 2048
-    print("\nInsecure RSA Length:")
+    print('\nInsecure RSA Length:')
     for r in results:
         keysize = r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].public_key().key_size
         if keysize < 2048:
             print(f"{r['print']} {keysize} bits")
 
     # Weak ciphers
-    print("\nWeak Ciphers")
+    print('\nWeak Ciphers')
     all_protos = [
         #ScanCommand.SSL_2_0_CIPHER_SUITES, # already caught with depracated protocols
         ScanCommand.SSL_3_0_CIPHER_SUITES, # already caught with depracated protocols
@@ -179,7 +183,7 @@ def CheckHosts(targets, export=False):
     
 
     # Medium ciphers
-    print("\nMedium Ciphers")
+    print('\nMedium Ciphers')
     for r in results:
         ciphers = []
         for proto in all_protos:
@@ -197,7 +201,9 @@ def main():
     xml_group.add_argument('-x', dest='nmapxmls', nargs='+', type=argparse.FileType('r'), help="Nmap's XML files", metavar='nmap.xml')
 
     target_group = parser.add_argument_group(title='Target a host')
-    target_group.add_argument('-t', dest='targets', nargs='+', type=str, help="Target host or host:port. If not port is specified the default will be 443.", metavar='host:port')
+    target_group.add_argument('-t', dest='targets', nargs='+', type=str, help='Target host or host:port. If not port is specified the default will be 443.', metavar='host:port')
+
+    parser.add_argument('-v', '--verbose', action='store_true', dest='verbose')
 
     args = parser.parse_args()
 
@@ -227,7 +233,7 @@ def main():
     if len(targets) == 0:
         print('No targets')
 
-    CheckHosts(targets)
+    CheckHosts(targets, args.verbose)
 
 if __name__ == '__main__':
     main()
