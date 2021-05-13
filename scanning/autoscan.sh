@@ -2,7 +2,7 @@
 #FILEBASE=$(date +%F_%H-%M-%S)
 FILEBASE=scan-$(date +%F_%H-%M-%S)
 MASSCANRATE=15000
-NMAPOPTIONS='-sV -T4 -sC'
+NMAPOPTIONS='-sV -T4 -sC --open'
 
 # run the script with the list of target IPs or Networks
 
