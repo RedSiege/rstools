@@ -2,7 +2,7 @@
 #FILEBASE=$(date +%F_%H-%M-%S)
 FILEBASE=scan-$(date +%F_%H-%M-%S)
 MASSCANRATE=15000
-NMAPOPTIONS='-sV -T4 -sC'
+NMAPOPTIONS='-sV -T4 -sC --open --script-args http.useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0"'
 
 # run the script with the list of target IPs or Networks
 
