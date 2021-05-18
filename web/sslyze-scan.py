@@ -42,6 +42,15 @@ def NmapXmlToTargets(nxml):
         targets.append((host,int(port)))
     return targets
 
+def printer(header, data, verbose):
+    if len(data):
+        print('\n' + header + ':')
+        for s in data:
+            print(s)
+        print('Count: ' + str(len(data)))
+    elif verbose:
+        print('\n' + header)
+        print('Count: 0')
 
 def CheckHosts(targets, verbose=False):
     cmds = [ # see list here: https://nabla-c0d3.github.io/sslyze/documentation/available-scan-commands.html
@@ -122,20 +131,16 @@ def CheckHosts(targets, verbose=False):
 
 
     # Self-Signed
-    print('\nSelf-Signed Certificate:')
-    count = 0
+    a = []
     for r in results:
         if r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string and 'self signed certificate' in r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string:
-                print(r['print'])
-                count += 1
-    print('Count: ' + str(count))
-
+                a.append(r['print'])
+    printer('Self-Signed Certificate', a, verbose)
 
     # Deprecated Protocols - Report up to TLS 1.1
     # In the future we may need to add ScanCommand.TLS_1_2_CIPHER_SUITES and ScanCommand.TLS_1_3_CIPHER_SUITES
+    a = []
     deprecated_protos = [ScanCommand.SSL_2_0_CIPHER_SUITES, ScanCommand.SSL_3_0_CIPHER_SUITES, ScanCommand.TLS_1_0_CIPHER_SUITES, ScanCommand.TLS_1_1_CIPHER_SUITES]
-    print('\nDeprecated Protocols:')
-    count = 0
     for r in results:
         protos = []
         for proto in deprecated_protos:
@@ -143,42 +148,33 @@ def CheckHosts(targets, verbose=False):
                 name,major,minor = r['result'].scan_commands_results[proto].tls_version_used.name.split('_')
                 protos.append(f'{name}v{major}.{minor}')
         if len(protos):
-            print(r['print'] + '\t' + ', '.join(protos))
-            count += 1
-    print('Count: ' + str(count))
-
+            a.append(r['print'] + '\t' + ', '.join(protos))
+    printer('Deprecated Protocols', a, verbose)
 
     # Expired
-    print('\nExpired Certificates:')
-    count = 0
+    a = []
     for r in results:
         if datetime.datetime.now() > r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].not_valid_after:
-            print(r['print'])
-            count += 1
-    print('Count: ' + str(count))
+            a.append(r['print'])
+    printer('Expired Certificates', a, verbose)
 
     # Weak Signature
-    print('\nSHA1 Signature:')
-    count = 0
+    a = []
     for r in results:
         if r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].signature_hash_algorithm.name in ['sha1', 'md5']:
-            print(r['print'])
-            count += 1
-    print('Count: ' + str(count))
+            a.append(r['print'])
+    printer('SHA1 Signature', a, verbose)
 
     # Weak RSA Length < 2048
-    print('\nInsecure RSA Length:')
-    count = 0
+    a = []
     for r in results:
         keysize = r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].public_key().key_size
         if keysize < 2048:
-            print(f"{r['print']} {keysize} bits")
-            count += 1
-    print('Count: ' + str(count))
+            a.append(f"{r['print']} {keysize} bits")
+    printer('Insecure RSA Length', a, verbose)
 
     # Weak ciphers
-    print('\nWeak Ciphers:')
-    count = 0
+    a = []
     all_protos = [
         #ScanCommand.SSL_2_0_CIPHER_SUITES, # already caught with depracated protocols
         ScanCommand.SSL_3_0_CIPHER_SUITES, # already caught with depracated protocols
@@ -197,13 +193,11 @@ def CheckHosts(targets, verbose=False):
         if len(ciphers):
             # dedup ciphers
             ciphers = list(set(ciphers))
-            print(f"{r['print']}\t{', '.join(ciphers)}")
-            count += 1
-    print('Count: ' + str(count))
+            a.append(f"{r['print']}\t{', '.join(ciphers)}")
+    printer('Weak Ciphers', a, verbose)
 
     # Medium ciphers
-    print('\nMedium Ciphers:')
-    count = 0
+    a = []
     for r in results:
         ciphers = []
         for proto in all_protos:
@@ -214,9 +208,8 @@ def CheckHosts(targets, verbose=False):
         if len(ciphers):
             # dedup ciphers
             ciphers = list(set(ciphers))
-            print(f"{r['print']}\t{', '.join(ciphers)}")
-            count += 1
-    print('Count: ' + str(count))
+            a.append(f"{r['print']}\t{', '.join(ciphers)}")
+    printer('Medium Ciphers', a, verbose)
 
 def main():
     parser = argparse.ArgumentParser(description='Get SSL/TTL Issues in a simple format')
