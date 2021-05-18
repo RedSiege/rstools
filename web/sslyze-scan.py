@@ -195,6 +195,8 @@ def CheckHosts(targets, verbose=False):
                 if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name:
                     ciphers.append(name)
         if len(ciphers):
+            # dedup ciphers
+            ciphers = list(set(ciphers))
             print(f"{r['print']}\t{', '.join(ciphers)}")
             count += 1
     print('Count: ' + str(count))
@@ -210,6 +212,8 @@ def CheckHosts(targets, verbose=False):
                 if 'DES' in name or 'RC4' in name:
                     ciphers.append(name)
         if len(ciphers):
+            # dedup ciphers
+            ciphers = list(set(ciphers))
             print(f"{r['print']}\t{', '.join(ciphers)}")
             count += 1
     print('Count: ' + str(count))
