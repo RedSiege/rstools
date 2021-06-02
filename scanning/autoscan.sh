@@ -32,8 +32,10 @@ echo "Running: masscan --ports 0-65535 --rate ${MASSCANRATE} --src-port=61000 --
 masscan --ports 0-65535 --rate $MASSCANRATE --src-port=61000 --output-format binary --output-filename $FILEBASE.masscan -iL $1
 
 # convert to grepable
-masscan --open --readscan $FILEBASE.masscan -oG $FILEBASE.grep
-echo
+masscan --open --readscan $FILEBASE.masscan -oG $FILEBASE.grep-orig
+# remove the Timstamp column on newer versions of masscan
+cat $FILEBASE.grep-orig | sed -E 's/Timestamp: [0-9]+\t//g' > $FILEBASE.grep
+rm $FILEBASE.grep-orig
 
 # get the ports
 grep /open/ $FILEBASE.grep | cut -d ' ' -f 4 | cut -d / -f 1 | sort -nk 1 | uniq > $FILEBASE-ports.txt
