@@ -144,9 +144,10 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         protos = []
         for proto in deprecated_protos:
-            if len(r['result'].scan_commands_results[proto].accepted_cipher_suites):
-                name,major,minor = r['result'].scan_commands_results[proto].tls_version_used.name.split('_')
-                protos.append(f'{name}v{major}.{minor}')
+            if proto in r['result'].scan_commands_results:
+                if len(r['result'].scan_commands_results[proto].accepted_cipher_suites):
+                    name,major,minor = r['result'].scan_commands_results[proto].tls_version_used.name.split('_')
+                    protos.append(f'{name}v{major}.{minor}')
         if len(protos):
             a.append(r['print'] + '\t' + ', '.join(protos))
     printer('Deprecated Protocols', a, verbose)
@@ -177,7 +178,7 @@ def CheckHosts(targets, verbose=False):
     a = []
     all_protos = [
         #ScanCommand.SSL_2_0_CIPHER_SUITES, # already caught with depracated protocols
-        ScanCommand.SSL_3_0_CIPHER_SUITES, # already caught with depracated protocols
+        #ScanCommand.SSL_3_0_CIPHER_SUITES, # already caught with depracated protocols
         ScanCommand.TLS_1_0_CIPHER_SUITES,
         ScanCommand.TLS_1_1_CIPHER_SUITES,
         ScanCommand.TLS_1_2_CIPHER_SUITES,
@@ -186,10 +187,11 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         ciphers = []
         for proto in all_protos:
-            for cipher in r['result'].scan_commands_results[proto].accepted_cipher_suites:
-                name = cipher.cipher_suite.openssl_name
-                if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name:
-                    ciphers.append(name)
+            if proto in r['result'].scan_commands_results:
+                for cipher in r['result'].scan_commands_results[proto].accepted_cipher_suites:
+                    name = cipher.cipher_suite.openssl_name
+                    if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name:
+                        ciphers.append(name)
         if len(ciphers):
             # dedup ciphers
             ciphers = list(set(ciphers))
@@ -201,10 +203,11 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         ciphers = []
         for proto in all_protos:
-            for cipher in r['result'].scan_commands_results[proto].accepted_cipher_suites:
-                name = cipher.cipher_suite.openssl_name
-                if 'DES' in name or 'RC4' in name:
-                    ciphers.append(name)
+            if proto in r['result'].scan_commands_results:
+                for cipher in r['result'].scan_commands_results[proto].accepted_cipher_suites:
+                    name = cipher.cipher_suite.openssl_name
+                    if 'DES' in name or 'RC4' in name:
+                        ciphers.append(name)
         if len(ciphers):
             # dedup ciphers
             ciphers = list(set(ciphers))
