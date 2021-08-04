@@ -76,6 +76,6 @@ PORTS=`awk -v ORS=, '
         }}
 ' $FILEBASE-ports.txt | sed 's/,$//'`
 
-COMMAND="nmap $NMAPOPTIONS -oA $FILEBASE -iL $FILEBASE-hosts.txt -p $PORTS"
+COMMAND="nmap -oA $FILEBASE -iL $FILEBASE-hosts.txt -p $PORTS $NMAPOPTIONS"
 echo "Running: $COMMAND"
-$COMMAND
+"$COMMAND"
