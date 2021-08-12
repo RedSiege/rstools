@@ -76,6 +76,17 @@ PORTS=`awk -v ORS=, '
         }}
 ' $FILEBASE-ports.txt | sed 's/,$//'`
 
+export APIKEY=6780c9ddb1f243edb1195c9205595ae5
+echo "" > $FILEBASE-geoip.txt
+while read IP; do echo -e $IP\\tipgeolocation.io\\t`curl -s "https://api.ipgeolocation.io/ipgeo?apiKey=$APIKEY&ip=$IP" | jq -jr '.country_code2 + ", " + .state_prov + "\n"'` >> $FILEBASE-geoip.txt; done < $FILEBASE-hosts.txt
+
+# get the location of each IP
+wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
+gunzip GeoLiteCity.dat.gz
+
+
+
+
 COMMAND="nmap -oA $FILEBASE -iL $FILEBASE-hosts.txt -p $PORTS $NMAPOPTIONS"
 echo "Running: $COMMAND"
 "$COMMAND"
