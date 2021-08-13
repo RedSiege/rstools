@@ -5,7 +5,7 @@ NMAPOPTIONS='-sV -T4 -sC --open --script-args http.useragent="Mozilla/5.0 (Windo
 
 # run the script with the list of target IPs or Networks
 
-if [ $# -ne 1 ] || [[ "$*" == *-h* ]] || [[ "$*" == *--help* ]]; then
+if [ $# -ne 1 ] || [[ "$*" == -h ]] || [[ "$*" == --help ]]; then
     echo "Usage: $0 targetfile.txt"
     exit 0
 fi

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -ne 2 ] || [[ "$*" == *-h* ]] || [[ "$*" == *--help* ]]; then
+if [ $# -ne 2 ] || [[ "$*" == -h ]] || [[ "$*" == --help ]]; then
     echo "Usage: $0 HOSTFILE OUTFILE"
     echo "This script get get list of the locations of systems in the HOSTFILE"
     echo "Output is tab delimited: host | source | coutry, state/prov"
@@ -9,10 +9,6 @@ fi
 
 HOSTFILE=$1
 OUTFILE=$2
-
-echo $HOSTFILE
-echo $OUTFILE
-exit
 
 if [[ -f `dirname "$0"`/ipgeolocation.key ]];then
     export APIKEY=`cat $(dirname "$0")/ipgeolocation.key | sed -r s/\s+//g`
