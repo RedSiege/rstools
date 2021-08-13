@@ -1,5 +1,4 @@
 #!/bin/bash
-#FILEBASE=$(date +%F_%H-%M-%S)
 FILEBASE=scan-$(date +%F_%H-%M-%S)
 MASSCANRATE=15000
 NMAPOPTIONS='-sV -T4 -sC --open --script-args http.useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0"'
@@ -76,20 +75,9 @@ PORTS=`awk -v ORS=, '
         }}
 ' $FILEBASE-ports.txt | sed 's/,$//'`
 
-
-if [[ -f ipgeolocation.key ]];then
-    export APIKEY=`cat ipgeolocation.key | sed -r s/\s+//g`
-    if [[ -z "$APIKEY" ]]; then
-        echo 'invalid ipgeolocation.key' > $FILEBASE-geoip.txt
-    else
-        rm $FILEBASE-geoip.txt
-        while read IP; do echo -e $IP\\tipgeolocation.io\\t`curl -s "https://api.ipgeolocation.io/ipgeo?apiKey=$APIKEY&ip=$IP" | jq -jr '.country_code2 + ", " + .state_prov + "\n"'` >> $FILEBASE-geoip.txt; done < $FILEBASE-hosts.txt
-    fi
-else
-    echo 'missing ipgeolocation.key' > $FILEBASE-geoip.txt
-fi
-
+# do geoip
+eval `dirname "$0"`/geoip.sh $FILEBASE-hosts.txt $FILEBASE-geoip.txt
 
 COMMAND="nmap -oA $FILEBASE -iL $FILEBASE-hosts.txt -p $PORTS $NMAPOPTIONS"
 echo "Running: $COMMAND"
-"$COMMAND"
+eval "$COMMAND"
