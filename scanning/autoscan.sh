@@ -76,15 +76,18 @@ PORTS=`awk -v ORS=, '
         }}
 ' $FILEBASE-ports.txt | sed 's/,$//'`
 
-export APIKEY=6780c9ddb1f243edb1195c9205595ae5
-echo "" > $FILEBASE-geoip.txt
-while read IP; do echo -e $IP\\tipgeolocation.io\\t`curl -s "https://api.ipgeolocation.io/ipgeo?apiKey=$APIKEY&ip=$IP" | jq -jr '.country_code2 + ", " + .state_prov + "\n"'` >> $FILEBASE-geoip.txt; done < $FILEBASE-hosts.txt
 
-# get the location of each IP
-wget http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz
-gunzip GeoLiteCity.dat.gz
-
-
+if [[ -f ipgeolocation.key ]];then
+    export APIKEY=`cat ipgeolocation.key | sed -r s/\s+//g`
+    if [[ -z "$APIKEY" ]]; then
+        echo 'invalid ipgeolocation.key' > $FILEBASE-geoip.txt
+    else
+        rm $FILEBASE-geoip.txt
+        while read IP; do echo -e $IP\\tipgeolocation.io\\t`curl -s "https://api.ipgeolocation.io/ipgeo?apiKey=$APIKEY&ip=$IP" | jq -jr '.country_code2 + ", " + .state_prov + "\n"'` >> $FILEBASE-geoip.txt; done < $FILEBASE-hosts.txt
+    fi
+else
+    echo 'missing ipgeolocation.key' > $FILEBASE-geoip.txt
+fi
 
 
 COMMAND="nmap -oA $FILEBASE -iL $FILEBASE-hosts.txt -p $PORTS $NMAPOPTIONS"
