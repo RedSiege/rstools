@@ -41,7 +41,7 @@ Similar to GetNamesFromServerCert.py but for PowerShell. Parameters are `-Target
 
 ## Azure
 
-### adss-spray.py
+### adsso-spray.py
 
 Tool for performing Azure AD user enumeration and password spraying via the Azure AD Seamless SSO endpoint.
 
