@@ -38,3 +38,34 @@ Takes targets (-t) in IP, FQDN, or CIDR format and combines them with ports (-p)
 Gets the Common Name and Subject Alternate Names from a certificate.
 
 Similar to GetNamesFromServerCert.py but for PowerShell. Parameters are `-Targets` and `-Ports`.
+
+## Azure
+
+### adss-spray.py
+
+Tool for performing Azure AD user enumeration and password spraying via the Azure AD Seamless SSO endpoint.
+
+```
+usage: adsso-spray.py [-h] [-d DOMAIN] [-l USER_LIST] [-u URL] [-w WAIT] [-p PASSWORD] [-v] [-vv]
+                      [-o OUTPUT_FILE]
+
+Enumerate users or password spray against Azure AD Seamless SSO
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose
+  -vv, --more-verbose
+  -o OUTPUT_FILE, --output OUTPUT_FILE
+                        Output file for results (csv). Default is spray_results.csv
+
+Attack Target:
+  -d DOMAIN             Target domain - required
+  -l USER_LIST          File with list of target usernames (without domain)
+  -u URL, --url URL     Target URL if using something like fireprox; otherwise will directly call
+                        the Azure AD SeamlessSSO endpoint
+  -w WAIT, --wait WAIT  Number of seconds to sleep between individual user attempts
+
+Password Group:
+  -p PASSWORD, --password PASSWORD
+                        password to spray. Defaults to "notarealpassword,Iswear".
+```
