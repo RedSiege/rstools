@@ -226,15 +226,18 @@ def main():
 
 	xml_group = parser.add_argument_group(title='Get targets from Nmap XML output')
 	xml_group.add_argument('-x', dest='nmapxmls', nargs='+', type=argparse.FileType('r'), help="Nmap's XML Files", metavar='nmap.xml')
+ 
+	list_group = parser.add_argument_group(title='Get targets from file (one host per line)')
+	list_group.add_argument = ('-f', dest='input_file', nargs='+', type=arparse.FileType('r'), help="List of subdomains (host or host:port) to scan. If no port is specified the default will be 443.", metavar='targets.txt')
 
 	target_group = parser.add_argument_group(title="Target a host")
-	target_group.add_argument('-t', dest='targets', nargs='+', type=str, help='Target host or host:port. If no port is specified the default will be 80.', metavar='host:port')
+	target_group.add_argument('-t', dest='targets', nargs='+', type=str, help='Target host or host:port. If no port is specified the default will be 443.', metavar='host:port')
 
 	parser.add_argument('-v', '--verbose', action='store_true', dest='verbose')
 
 	args = parser.parse_args()
 
-	if not args.nmapxmls and not args.targets:
+	if not args.nmapxmls and not args.targets and not args.input_file:
 		parser.print_help()
 		print('\nNo input file(s) or target(s) provided')
 		sys.exit()
@@ -248,12 +251,20 @@ def main():
 				host, port = target.split(':')
 				targets.append((host,port))
 			else:
-				targets.append((target, '80'))
+				targets.append((target, '443'))
 
 	# get targets from xml
 	if args.nmapxmls:
 		for nxml in args.nmapxmls:
 			targets.extend(NmapXmlToTargets(nxml.name))
+
+	if args.input_file:
+		for target.strip in args.input_file:
+			if ':' in target:
+				host, port = target.split(':')
+				targets.append((host,port))
+			else:
+				targets.append((target, '443'))
             
 	if len(targets) == 0:
 		print('No targets')
