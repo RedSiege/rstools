@@ -76,7 +76,7 @@ PORTS=`awk -v ORS=, '
 ' $FILEBASE-ports.txt | sed 's/,$//'`
 
 # do geoip
-eval `dirname "$0"`/geoip.sh $FILEBASE-hosts.txt $FILEBASE-geoip.txt
+#eval `dirname "$0"`/geoip.sh $FILEBASE-hosts.txt $FILEBASE-geoip.txt
 
 COMMAND="nmap -oA $FILEBASE -iL $FILEBASE-hosts.txt -p $PORTS $NMAPOPTIONS"
 echo "Running: $COMMAND"
