@@ -17,7 +17,7 @@
 			"queryList": [
 				{
 					"final": true,
-					"query": "MATCH (u:User) WHERE u.pwdlastset < 1577854800.0  and u.enabled=true return u",
+					"query": "MATCH (u:User) WHERE u.pwdlastset < 1577854800.0 and u.pwdlastset <> 0  and u.enabled=true return u",
 					"allowCollapse": true
 				}
 			]
@@ -28,7 +28,7 @@
 			"queryList": [
 				{
 					"final": true,
-					"query": "Match (u:User) WHERE u.pwdlastset < 1546318800 and u.enabled=true return u",
+					"query": "Match (u:User) WHERE u.pwdlastset < 1546318800 and u.pwdlastset <> 0  and u.enabled=true return u",
 					"allowCollapse": true
 				}
 			]
@@ -39,7 +39,7 @@
 			"queryList": [
 				{
 					"final": true,
-					"query": "Match (u:User) WHERE u.pwdlastset < 1514782800  and u.enabled=true return u",
+					"query": "Match (u:User) WHERE u.pwdlastset < 1514782800 and u.pwdlastset <> 0 and u.enabled=true return u",
 					"allowCollapse": true
 				}
 			]
@@ -50,7 +50,7 @@
 			"queryList": [
 				{
 					"final": true,
-					"query": "Match (u:User) WHERE u.pwdlastset < 1483246800  and u.enabled=true return u",
+					"query": "Match (u:User) WHERE u.pwdlastset < 1483246800 and u.pwdlastset <> 0 and u.enabled=true return u",
 					"allowCollapse": true
 				}
 			]
@@ -61,7 +61,18 @@
 			"queryList": [
 				{
 					"final": true,
-					"query": "Match (u:User) WHERE u.pwdlastset < 1451624400  and u.enabled=true return u",
+					"query": "Match (u:User) WHERE u.pwdlastset < 1451624400  and u.pwdlastset <> 0 and u.enabled=true return u",
+					"allowCollapse": true
+				}
+			]
+		},
+		{
+			"name": "No Recorded Password Change",
+			"category": "Domain Information",
+			"queryList": [
+				{
+					"final": true,
+					"query": "Match (u:User) WHERE u.pwdlastset = 0 and u.enabled=true return u",
 					"allowCollapse": true
 				}
 			]
