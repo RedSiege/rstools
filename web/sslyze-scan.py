@@ -2,17 +2,19 @@
 import sys
 import argparse
 import datetime
+import pkg_resources
 
 GROUPSIZE = 20
 
 try:
+    pkg_resources.require("sslyze=4.1.0")
     from sslyze import *
     import sslyze.errors
 except:
     print("""
-Missing module "sslyze". Install it with the following commands:
+Missing module "sslyze version 4.1.0". Install it with the following commands:
   pip install --upgrade setuptools
-  pip install --upgrade sslyze
+  pip install sslyze==4.1.0
     """)
     sys.exit()
 
