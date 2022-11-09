@@ -7,7 +7,7 @@ import pkg_resources
 GROUPSIZE = 20
 
 try:
-    pkg_resources.require("sslyze=4.1.0")
+    pkg_resources.require("sslyze==4.1.0")
     from sslyze import *
     import sslyze.errors
 except:
