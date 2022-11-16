@@ -47,7 +47,8 @@ def NmapXmlToTargets(nxml):
 def printer(header, data, verbose):
     if len(data):
         print('\n' + header + ':')
-        for s in data:
+        #sorts based on IP address
+        for s in sorted(data, key=lambda x: [int(i) if i.isdigit() else i for i in x.split(':')[0].split('.')]):
             print(s)
         print('Count: ' + str(len(data)))
     elif verbose:
@@ -158,7 +159,10 @@ def CheckHosts(targets, verbose=False):
     a = []
     for r in results:
         if datetime.datetime.now() > r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].not_valid_after:
-            a.append(r['print'])
+            #stores date_time
+            expired_time=r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].not_valid_after
+            #adds formatted date time
+            a.append(r['print']+'\t'+expired_time.strftime('%b %d, %Y'))
     printer('Expired Certificates', a, verbose)
 
     # Weak Signature
@@ -259,3 +263,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
