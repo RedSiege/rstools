@@ -2,27 +2,11 @@
 import sys
 import argparse
 import datetime
-import pkg_resources
 
 GROUPSIZE = 20
 
-try:
-    pkg_resources.require("sslyze==4.1.0")
-    from sslyze import *
-    import sslyze.errors
-except:
-    print("""
-Missing module "sslyze version 4.1.0". Install it with the following commands:
-  pip install --upgrade setuptools
-  pip install sslyze==4.1.0
-    """)
-    sys.exit()
-
-try:
-    import xmlstarlet
-except:
-    print('Missing module xmlstarlet. Please install with:\n  pip install --upgrade xmlstarlet')
-    sys.exit()
+from sslyze import *
+import sslyze.errors
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
