@@ -2,11 +2,27 @@
 import sys
 import argparse
 import datetime
+import pkg_resources
 
 GROUPSIZE = 20
 
-from sslyze import *
-import sslyze.errors
+try:
+    pkg_resources.require("sslyze==4.1.0")
+    from sslyze import *
+    import sslyze.errors
+except:
+    print("""
+Missing module "sslyze version 4.1.0". Install it with the following commands:
+  pip install --upgrade setuptools
+  pip install sslyze==4.1.0
+    """)
+    sys.exit()
+
+try:
+    import xmlstarlet
+except:
+    print('Missing module xmlstarlet. Please install with:\n  pip install --upgrade xmlstarlet')
+    sys.exit()
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
@@ -40,8 +56,6 @@ def printer(header, data, verbose):
         print('Count: 0')
 
 def CheckHosts(targets, verbose=False):
-    # omitting the commands will try all
-    '''
     cmds = [ # see list here: https://nabla-c0d3.github.io/sslyze/documentation/available-scan-commands.html
         ScanCommand.CERTIFICATE_INFO,
         ScanCommand.SSL_2_0_CIPHER_SUITES,
@@ -57,77 +71,61 @@ def CheckHosts(targets, verbose=False):
         ScanCommand.HEARTBLEED,
         ScanCommand.ROBOT,
     ]
-    '''
-
-    all_scan_requests = []
-
-    # Chunking so the scanner can be nuked and restarted
-    for host,port in targets:
-
-        if verbose:
-            print(f'Testing {host}:{port}')
-
-        server_location = ServerNetworkLocation(host, port)
-
-        
-        # add a try catch here maybe?
-        req = ServerScanRequest(server_location)
-
-        all_scan_requests.append(req)
-
-    scanner = Scanner()
-
-    scanner.queue_scans(all_scan_requests)
-        
-    '''
-    # Do connectivity testing to ensure SSLyze is able to connect
-    try:
-        server_info = ServerConnectivityTester().perform(server_location)
-    except sslyze.errors.ConnectionToServerTimedOut as e:
-        # Could not connect to the server; abort
-        print(f'Error connecting to {server_location.hostname} {server_location.ip_address}: {e.error_message}')
-        continue
-    except sslyze.errors.ServerRejectedConnection as e:
-        # Could not connect to the server; abort
-        print(f'Connection rejected to {server_location.hostname} {server_location.ip_address}: {e.error_message}')
-        continue
-    except sslyze.errors.ServerTlsConfigurationNotSupported as e:
-        # Could not connect to the server; abort
-        print(f'TLS Configuration not supported {server_location.hostname} {server_location.ip_address}: {e.error_message}')
-        continue
-    except sslyze.errors.ConnectionToServerFailed as e:
-        # Could not connect to the server; abort
-        print(f'Connection to server failed {server_location.hostname} {server_location.ip_address}: {e.error_message}')
-        continue
-    except KeyboardInterrupt:
-        sys.exit()
-    except:
-        e = sys.exc_info()[0]
-        print(f'Error connecting to {target}: \n{e}')
-        continue
-    '''
 
     results = []
 
-    for r in scanner.get_results():
+    for chunk in chunker(targets, GROUPSIZE):
+        # this is an asyncronous scanner, but it has a memory leak so it is being caller serially
+        # Yes, Scanner() has options to reduce the number of targets, but the propblem still occurs
+        scanner = Scanner()
 
-        if r.scan_status == ServerScanStatusEnum.ERROR_NO_CONNECTIVITY:
-            # error running scan
-            print(
-                f"\nError: Could not connect to {r.server_location.hostname}:"
-                f" {r.connectivity_error_trace}"
-            )
-            continue
+        # Chunking so the scanner can be nuked and restarted
+        for host,port in chunk:
 
-        results.append({
-            'ip': r.server_location.ip_address,
-            'port': r.server_location.port,
-            'print': (r.server_location.ip_address + ':' + str(r.server_location.port)),
-            'result': r
-        })
+            if verbose:
+                print(f'Testing {host}:{port}')
 
-        if verbose:
-            print('Tested ' + r.server_info.server_location.ip_address + ':' + str(r.server_info.server_location.port))
+            server_location = ServerNetworkLocationViaDirectConnection.with_ip_address_lookup(host, port)
+
+            # Do connectivity testing to ensure SSLyze is able to connect
+            try:
+                server_info = ServerConnectivityTester().perform(server_location)
+            except sslyze.errors.ConnectionToServerTimedOut as e:
+                # Could not connect to the server; abort
+                print(f'Error connecting to {server_location.hostname} {server_location.ip_address}: {e.error_message}')
+                continue
+            except sslyze.errors.ServerRejectedConnection as e:
+                # Could not connect to the server; abort
+                print(f'Connection rejected to {server_location.hostname} {server_location.ip_address}: {e.error_message}')
+                continue
+            except sslyze.errors.ServerTlsConfigurationNotSupported as e:
+                # Could not connect to the server; abort
+                print(f'TLS Configuration not supported {server_location.hostname} {server_location.ip_address}: {e.error_message}')
+                continue
+            except sslyze.errors.ConnectionToServerFailed as e:
+                # Could not connect to the server; abort
+                print(f'Connection to server failed {server_location.hostname} {server_location.ip_address}: {e.error_message}')
+                continue
+            except KeyboardInterrupt:
+                sys.exit()
+            except:
+                e = sys.exc_info()[0]
+                print(f'Error connecting to {target}: \n{e}')
+                continue
+
+            server_scan_req = ServerScanRequest(server_info=server_info, scan_commands=cmds)
+            scanner.queue_scan(server_scan_req)
+
+        for r in scanner.get_results():
+            results.append({
+                'ip': r.server_info.server_location.ip_address,
+                'port': r.server_info.server_location.port,
+                'print': (r.server_info.server_location.ip_address + ':' + str(r.server_info.server_location.port)),
+                'result': r
+            })
+
+            if verbose:
+                print('Tested ' + r.server_info.server_location.ip_address + ':' + str(r.server_info.server_location.port))
 
     #if export:
     #    for i, r in enumerate(results):
@@ -138,11 +136,9 @@ def CheckHosts(targets, verbose=False):
     # Self-Signed
     a = []
     for r in results:
-        #if r['result'].scan_result.certificate_info.result.certificate_deployments[0].path_validation_results[0].openssl_error_string and 'self signed certificate' in r['result'].scan_result['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string:
-        if r['result'].scan_result.certificate_info.result.certificate_deployments[0].path_validation_results[0].validation_error:
-            a.append(r['print'])
-    printer('Untrusted Certificates (Likely Self-Signed, please confirm!)', a, verbose)
-
+        if r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string and 'self signed certificate' in r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].path_validation_results[0].openssl_error_string:
+                a.append(r['print'])
+    printer('Self-Signed Certificate', a, verbose)
 
     # Deprecated Protocols - Report up to TLS 1.1
     # In the future we may need to add ScanCommand.TLS_1_2_CIPHER_SUITES and ScanCommand.TLS_1_3_CIPHER_SUITES
@@ -151,9 +147,9 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         protos = []
         for proto in deprecated_protos:
-            if hasattr(r['result'].scan_result, proto.value):
-                if hasattr(getattr(r['result'].scan_result, proto.value).result, 'accepted_cipher_suites') and len(getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites):
-                    name,major,minor = getattr(r['result'].scan_result, proto.value).result.tls_version_used.name.split('_')
+            if proto in r['result'].scan_commands_results:
+                if len(r['result'].scan_commands_results[proto].accepted_cipher_suites):
+                    name,major,minor = r['result'].scan_commands_results[proto].tls_version_used.name.split('_')
                     protos.append(f'{name}v{major}.{minor}')
         if len(protos):
             a.append(r['print'] + '\t' + ', '.join(protos))
@@ -162,9 +158,9 @@ def CheckHosts(targets, verbose=False):
     # Expired
     a = []
     for r in results:
-        if datetime.datetime.now(datetime.UTC) > r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].not_valid_after_utc:
+        if datetime.datetime.now() > r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].not_valid_after:
             #stores date_time
-            expired_time=r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].not_valid_after_utc
+            expired_time=r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].not_valid_after
             #adds formatted date time
             a.append(r['print']+'\t'+expired_time.strftime('%b %d, %Y'))
     printer('Expired Certificates', a, verbose)
@@ -172,17 +168,16 @@ def CheckHosts(targets, verbose=False):
     # Weak Signature
     a = []
     for r in results:
-        hashalgo = r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].signature_hash_algorithm.name
-        if hashalgo in ['sha1', 'md5']:
-            a.append(f"{r['print']}\t{hashalgo}")
-    printer('Weak Signature', a, verbose)
+        if r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].signature_hash_algorithm.name in ['sha1', 'md5']:
+            a.append(r['print'])
+    printer('SHA1 Signature', a, verbose)
 
     # Weak RSA Length < 2048
     a = []
     for r in results:
-        keysize = r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].public_key().key_size
+        keysize = r['result'].scan_commands_results['certificate_info'].certificate_deployments[0].received_certificate_chain[0].public_key().key_size
         if keysize < 2048:
-            a.append(f"{r['print']}\t{keysize} bits")
+            a.append(f"{r['print']} {keysize} bits")
     printer('Insecure RSA Length', a, verbose)
 
     # Weak ciphers
@@ -198,10 +193,10 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         ciphers = []
         for proto in all_protos:
-            if hasattr(r['result'].scan_result, proto.value):
-                for cipher in getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites:
+            if proto in r['result'].scan_commands_results:
+                for cipher in r['result'].scan_commands_results[proto].accepted_cipher_suites:
                     name = cipher.cipher_suite.openssl_name
-                    if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name or getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites[0].cipher_suite.key_size <= 64
+                    if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name:
                         ciphers.append(name)
         if len(ciphers):
             # dedup ciphers
@@ -214,10 +209,10 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         ciphers = []
         for proto in all_protos:
-            if hasattr(r['result'].scan_result, proto.value):
-                for cipher in getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites:
+            if proto in r['result'].scan_commands_results:
+                for cipher in r['result'].scan_commands_results[proto].accepted_cipher_suites:
                     name = cipher.cipher_suite.openssl_name
-                    if 'DES' in name or 'RC4' in name or 64 < getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites[0].cipher_suite.key_size <= 112:
+                    if 'DES' in name or 'RC4' in name:
                         ciphers.append(name)
         if len(ciphers):
             # dedup ciphers
