@@ -27,7 +27,8 @@ xmlstarlet sel -T -t -m //ssltest -o 'Target: ' -v @host -o ':' -v @port -n \
         -i "///certificate/expired[text()='true']" -o 'Expired Certificate' -n -b \
         -i "///certificate/signature-algorithm[contains(text(), 'sha1')]" -o 'Bad Certificate Signature Algorithm: SHA1' -n -b \
         -i "///certificate/signature-algorithm[contains(text(), 'md5')]" -o 'Bad Certificate Signature Algorithm: MD5' -n -b \
-        -m "///certificate/pk[@bits<2048]" -o 'Weak RSA ' -v @bits -o ' bits' -n \
+	-m "///certificate/pk[@bits<2048 and @type='RSA']" -o 'Weak RSA ' -v @bits -o ' bits' -n \
+	-m "///certificate/pk[@bits<256 and @type='EC']" -o 'Weak EC ' -v @bits -o ' bits' -n \
         $FILENAME
 xmlstarlet sel -T -t \
         -i "//ssltest/cipher[contains(@sslversion, 'SSL') or @sslversion='TLSv1.0' or @sslversion='TLSv1.1']" -o 'Deprecated Protocols:' -n -b \

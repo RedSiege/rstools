@@ -1,7 +1,5 @@
 #!/bin/bash
 
-SSLSCANPATH=sslscan
-
 if [ $# -ne 1 ] || [[ "$*" == *-h* ]] || [[ "$*" == *--help* ]]; then
     echo "Usage: $0 nmap.xml"
     exit 1
@@ -39,8 +37,11 @@ do
         grep -iE '<signature-algorithm>.*sha1.*</signature-algorithm>' $FILENAME >/dev/null && WEAKSIG="$WEAKSIG^$TARGET SHA1 Certificate Signature"
         grep -iE '<signature-algorithm>.*md5.*</signature-algorithm>' $FILENAME >/dev/null && WEAKSIG="$WEAKSIG^$TARGET MD5 Certificate Signature"
         # Weak RSA Length
-        WEAKRSA_TEMP=`xmlstarlet sel -T -t -m "///certificate/pk[@bits<2048]" -v @bits $FILENAME`
+        WEAKRSA_TEMP=`xmlstarlet sel -T -t -m "///certificate/pk[@bits<2048 and @type='RSA']" -v @bits $FILENAME`
         [[ ! -z $WEAKRSA_TEMP ]] && WEAKRSA="$WEAKRSA^$TARGET $WEAKRSA_TEMP bits RSA"
+        # Weak EC Length
+        WEAKEC_TEMP=`xmlstarlet sel -T -t -m "///certificate/pk[@bits<256 and @type='EC']" -v @bits $FILENAME`
+        [[ ! -z $WEAKEC_TEMP ]] && WEAKEC="$WEAKRSA^$TARGET $WEAKRSA_TEMP bits EC"
         # Depracated protocols
         DEPPROTOS=`xmlstarlet sel -T -t -m "//ssltest/cipher[contains(@sslversion, 'SSL') or @sslversion='TLSv1.0' or @sslversion='TLSv1.1']" -v '@sslversion' -n $FILENAME | sort -uV`
         FIRST=true
@@ -93,6 +94,9 @@ echo "Weak Signature"
 echo
 echo "Weak RSA"
 [ ! -z "$WEAKRSA" ] && echo "${WEAKRSA:1}" | tr '^' '\n' | sort -uV || echo None
+echo
+echo "Weak EC"
+[ ! -z "$WEAKEC" ] && echo "${WEAKEC:1}" | tr '^' '\n' | sort -uV || echo None
 echo
 echo "Deprecated Protocols"
 [ ! -z "$DEPPROTO" ] && echo "${DEPPROTO:1}" | tr '^' '\n' | sort -uV || echo None
