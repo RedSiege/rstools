@@ -179,11 +179,21 @@ def CheckHosts(targets, verbose=False):
 
     # Weak RSA Length < 2048
     a = []
-    for r in results:
-        keysize = r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].public_key().key_size
-        if keysize < 2048:
-            a.append(f"{r['print']}\t{keysize} bits")
-    printer('Insecure RSA Length', a, verbose)
+    if not hasattr(r['result'].scan_result, 'elliptic_curves'):
+        for r in results:
+            keysize = r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].public_key().key_size
+            if keysize < 2048:
+                a.append(f"{r['print']}\t{keysize} bits")
+        printer('Insecure RSA Length', a, verbose)
+
+    # Weak ECC Length < 256
+    a = []
+    if hasattr(r['result'].scan_result, 'elliptic_curves'):
+        for r in results:
+            keysize = r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].public_key().key_size
+            if keysize < 256:
+                a.append(f"{r['print']}\t{keysize} bits")
+    printer('Insecure ECC Length', a, verbose)
 
     # Weak ciphers
     a = []
