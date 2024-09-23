@@ -201,7 +201,7 @@ def CheckHosts(targets, verbose=False):
             if hasattr(r['result'].scan_result, proto.value):
                 for cipher in getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites:
                     name = cipher.cipher_suite.openssl_name
-                    if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name or getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites[0].cipher_suite.key_size <= 64
+                    if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name or getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites[0].cipher_suite.key_size <= 64:
                         ciphers.append(name)
         if len(ciphers):
             # dedup ciphers
