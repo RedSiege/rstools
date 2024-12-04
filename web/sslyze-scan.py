@@ -112,9 +112,16 @@ def CheckHosts(targets, verbose=False):
     for r in scanner.get_results():
 
         if r.scan_status == ServerScanStatusEnum.ERROR_NO_CONNECTIVITY:
-            # error running scan
+            # can't connect
             print(
                 f"\nError: Could not connect to {r.server_location.hostname}:"
+                f" {r.connectivity_error_trace}"
+            )
+            continue
+        elif r.scan_result.certificate_info.status == ScanCommandAttemptStatusEnum.ERROR:
+            # unknown error
+            print(
+                f"\nError: unknown error connecting to {r.server_location.hostname}:"
                 f" {r.connectivity_error_trace}"
             )
             continue
@@ -127,7 +134,7 @@ def CheckHosts(targets, verbose=False):
         })
 
         if verbose:
-            print('Tested ' + r.server_info.server_location.ip_address + ':' + str(r.server_info.server_location.port))
+            print('Tested ' + r.server_location.ip_address + ':' + str(r.server_location.port))
 
     #if export:
     #    for i, r in enumerate(results):
