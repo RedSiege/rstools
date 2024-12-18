@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SSLSCANPATH=sslscan
+
 if [ $# -ne 1 ] || [[ "$*" == *-h* ]] || [[ "$*" == *--help* ]]; then
     echo "Usage: $0 nmap.xml"
     exit 1
