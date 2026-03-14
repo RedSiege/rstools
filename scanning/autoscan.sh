@@ -48,8 +48,18 @@ echo "`wc -l < $FILEBASE-hosts.txt` live hosts"
 grep /open/ $FILEBASE.grep | cut -d/ -f 1 | cut -d ' ' -f 2,4 | sed -e 's/ /:/g' | sort -uV > $FILEBASE-host-port.txt
 echo "`wc -l < $FILEBASE-host-port.txt` listening services"
 
+# sort hosts into per-port files
+PORTDIR="${FILEBASE}-portsort"
+mkdir -p "$PORTDIR"
+while IFS=: read -r ip port; do
+    echo "$ip" >> "$PORTDIR/port${port}.txt"
+done < "$FILEBASE-host-port.txt"
+for f in "$PORTDIR"/port*.txt; do
+    sort -t. -k1,1n -k2,2n -k3,3n -k4,4n -o "$f" "$f"
+done
+echo "Port-sorted files created in $PORTDIR/ (`ls "$PORTDIR" | wc -l` files)"
+
 # condense the ports to a range
-#PORTS=`awk -v ORS=, '{ print $1 }' $FILEBASE-ports.txt | sed 's/,$//'`
 PORTS=`awk -v ORS=, '
     NR==1{
         o=$1
