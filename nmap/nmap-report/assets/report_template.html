@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network Scan Findings Report — {{CLIENT}}</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1e222e; --ink:#e7e9ee; --muted:#9aa3b2;
+    --line:#2a2f3d; --accent:#5b9dff; --code:#0c0e14; --code-ink:#c7d0df; --poc-ink:#b9e6c4;
+    --crit:#e5484d; --high:#f2711c; --med:#e0b400; --low:#3aa0ff; --info:#7c8496;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f6f8; --panel:#ffffff; --panel2:#eef0f4; --ink:#1c2130; --muted:#5b6472;
+    --line:#d9dde5; --accent:#1f6feb; --code:#0f1320; --code-ink:#d3dcec; --poc-ink:#0a7d3a;
+    --crit:#d1343a; --high:#c85a10; --med:#9a7b00; --low:#1f6feb; --info:#5b6472;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 22px 80px}
+  header.top{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:28px}
+  h1{font-size:26px;margin:0 0 6px}
+  h2{font-size:20px;margin:38px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  h3{font-size:16px;margin:0 0 4px}
+  .sub{color:var(--muted);font-size:13.5px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,.mono{font-family:var(--mono);font-size:12.5px}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:16px}
+  .meta div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .meta span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .meta b{font-size:14px;font-weight:600}
+  .kpis{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:96px}
+  .kpi .n{font-size:24px;font-weight:700}
+  .kpi .l{color:var(--muted);font-size:12px}
+  .badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;
+    padding:2px 8px;border-radius:999px;color:#0d0f14;text-transform:uppercase;vertical-align:middle}
+  .b-crit{background:var(--crit);color:#fff}.b-high{background:var(--high)}
+  .b-med{background:var(--med)}.b-low{background:var(--low);color:#fff}.b-info{background:var(--info);color:#fff}
+  table.sum{width:100%;border-collapse:collapse;margin-top:8px;font-size:13.5px}
+  table.sum th,table.sum td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.sum th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  table.sum td.c{text-align:center;white-space:nowrap}
+  table.sum tr:hover{background:rgba(127,127,127,.08)}
+  .finding{background:var(--panel);border:1px solid var(--line);border-left-width:4px;border-radius:10px;
+    padding:18px 20px;margin:16px 0}
+  .finding.crit{border-left-color:var(--crit)}.finding.high{border-left-color:var(--high)}
+  .finding.med{border-left-color:var(--med)}.finding.low{border-left-color:var(--low)}
+  .finding.info{border-left-color:var(--info)}
+  .fhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .fid{font-family:var(--mono);color:var(--muted);font-size:12px}
+  .finding p{margin:8px 0}
+  .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin:12px 0 4px;font-weight:600}
+  .hosts{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+    font-family:var(--mono);font-size:12px;color:var(--code-ink);max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+  ul.refs{margin:4px 0 0;padding-left:18px}
+  ul.refs li{margin:3px 0;font-size:13.5px}
+  .tag{font-size:11px;font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);
+    border-radius:5px;padding:1px 6px;color:var(--muted)}
+  /* .poc MUST keep white-space:pre-wrap or multi-line commands collapse onto one line */
+  .poc{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+    font-family:var(--mono);font-size:12px;color:var(--poc-ink);overflow:auto;
+    white-space:pre-wrap;word-break:break-word}
+  .note{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:12px 0;font-size:13.5px}
+  .note b{color:var(--med)}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+  .themebtn{position:fixed;top:14px;right:14px;z-index:10;background:var(--panel);color:var(--ink);
+    border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer;
+    font-family:inherit;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  .themebtn:hover{border-color:var(--accent)}
+  @media (max-width:600px){.wrap{padding:18px 14px}h1{font-size:22px}}
+</style>
+</head>
+<body>
+<button class="themebtn" id="themeToggle" type="button" aria-label="Toggle light/dark theme">🌙 Dark</button>
+<div class="wrap">
+
+<header class="top">
+  <h1>Network Scan Findings Report</h1>
+  <div class="sub">Vulnerabilities &amp; configuration issues identified from Nmap service/version enumeration</div>
+  <div class="meta">
+    <div><span>Client</span><b>{{CLIENT}}</b></div>
+    <div><span>Scan date</span><b>{{SCAN_DATE}}</b></div>
+    <div><span>Report date</span><b>{{REPORT_DATE}}</b></div>
+    <div><span>Tool</span><b>{{NMAP_VERSION}}</b></div>
+    <div><span>Flags</span><b class="mono">{{NMAP_FLAGS}}</b></div>
+    <div><span>Hosts</span><b>{{HOST_COUNT}}</b></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">{{HOST_COUNT}}</div><div class="l">hosts responding</div></div>
+    <div class="kpi"><div class="n">{{FINDING_COUNT}}</div><div class="l">findings</div></div>
+    <div class="kpi"><div class="n" style="color:var(--crit)">{{N_CRIT}}</div><div class="l">critical</div></div>
+    <div class="kpi"><div class="n" style="color:var(--high)">{{N_HIGH}}</div><div class="l">high</div></div>
+    <div class="kpi"><div class="n" style="color:var(--med)">{{N_MED}}</div><div class="l">medium</div></div>
+    <div class="kpi"><div class="n" style="color:var(--low)">{{N_LOW}}</div><div class="l">low / info</div></div>
+  </div>
+</header>
+
+<section>
+  <h2>Executive summary</h2>
+  <p>{{EXEC_SUMMARY}}</p>
+  <!-- REQUIRED: keep a de-noising caveat so raw port counts aren't misread. -->
+  <div class="note"><b>Read this first — scan artifacts.</b> {{ARTIFACT_CAVEAT}}</div>
+</section>
+
+<section>
+  <h2>Findings summary</h2>
+  <table class="sum">
+    <thead><tr><th>#</th><th>Finding</th><th class="c">Severity</th><th class="c">Affected</th></tr></thead>
+    <tbody>
+      <!-- one <tr> per finding; link #fN to the detail card below -->
+      <tr><td>1</td><td><a href="#f1">{{FINDING_1_TITLE}}</a></td><td class="c"><span class="badge b-crit">Critical</span></td><td class="c">{{N}} hosts</td></tr>
+      <!-- ... -->
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Detailed findings</h2>
+
+  <!-- ============ FINDING CARD TEMPLATE — copy per finding ============
+       severity class on .finding: crit | high | med | low | info
+       badge class: b-crit | b-high | b-med | b-low | b-info
+       Omit the PoC block for non-exploitable / hygiene findings.
+       EVERY href in ul.refs MUST be verified live before shipping. -->
+  <div class="finding crit" id="f1">
+    <div class="fhead"><span class="badge b-crit">Critical</span><span class="fid">FND-01</span><h3>{{TITLE}}</h3></div>
+    <p>{{WHAT_IT_IS__WHY_IT_MATTERS__IMPACT}}</p>
+    <div class="lbl">Affected</div>
+    <div class="hosts">{{HOST:PORT list, comma or newline separated}}</div>
+    <div class="lbl">Validate / exploit</div>
+    <p class="poc">{{command 1}}
+{{command 2}}</p>
+    <div class="lbl">References <span class="tag">verified</span></div>
+    <ul class="refs">
+      <li><a href="{{URL}}">{{Authoritative source — NVD/vendor/CWE}}</a></li>
+      <li><a href="{{URL}}">{{PoC — Exploit-DB / tool repo}}</a></li>
+    </ul>
+    <div class="lbl">Remediation</div>
+    <p>{{fix}}</p>
+  </div>
+  <!-- ================================================================= -->
+
+  <!-- REQUIRED last card: scan artifacts / methodology caveats (severity info).
+       Document the load-balancer VIPs, tcpwrapped %, false positives, and what
+       was NOT tested. This is what stops the report from over-claiming. -->
+  <div class="finding info" id="f-artifacts">
+    <div class="fhead"><span class="badge b-info">Info</span><span class="fid">FND-XX</span><h3>Scan artifacts &amp; methodology caveats</h3></div>
+    <p>{{Explain tcpwrapped %, LB/VIP flooders excluded from counts, service-detection false positives, and tests not performed (UDP amp, SNMP community brute, DNS recursion, credentialed vuln scan).}}</p>
+    <div class="lbl">Load-balancer / flooder hosts (excluded from real-service counts)</div>
+    <div class="hosts">{{host list from triage.py NOISE REPORT}}</div>
+  </div>
+
+</section>
+
+<footer>
+  <p>Generated from <span class="mono">{{SOURCE_FILE}}</span> ({{NMAP_VERSION}}, {{SCAN_DATE}}). All reference and proof-of-concept links were verified live at {{REPORT_DATE}}. Severity ratings reflect network-position context and require validation against confirmed configuration/firmware. Proof-of-concept commands are for authorized testing under the engagement SOW only.</p>
+</footer>
+
+</div>
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themeToggle');
+  function apply(t){
+    root.setAttribute('data-theme',t);
+    btn.textContent = t==='light' ? '☀️ Light' : '🌙 Dark';
+    try{localStorage.setItem('nmapReportTheme',t);}catch(e){}
+  }
+  var saved; try{saved=localStorage.getItem('nmapReportTheme');}catch(e){}
+  apply(saved || 'dark');
+  btn.addEventListener('click',function(){
+    apply(root.getAttribute('data-theme')==='light' ? 'dark' : 'light');
+  });
+})();
+</script>
+</body>
+</html>
