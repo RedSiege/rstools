@@ -11,6 +11,14 @@ import sslyze.errors
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
+def accepted_ciphers(scan_result, proto):
+    # Returns the accepted cipher suites for a scan command, or an empty list
+    # if the scan command didn't complete (errored, not scheduled, etc.)
+    attempt = getattr(scan_result, proto.value, None)
+    if attempt is None or attempt.status != ScanCommandAttemptStatusEnum.COMPLETED or attempt.result is None:
+        return []
+    return attempt.result.accepted_cipher_suites
+
 def NmapXmlToTargets(nxml):
     from subprocess import Popen, PIPE
     process = Popen(['xmlstarlet', 'select', '-T', '-t', '-m', '/nmaprun/host/ports/port/service[@name="https" or @name="ssl" or @tunnel="ssl"]', '-v', '../../../child::address/attribute::addr', '-o', ':', '-v', '../@portid', '-n', nxml], stdout=PIPE, stderr=PIPE)
@@ -158,10 +166,9 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         protos = []
         for proto in deprecated_protos:
-            if hasattr(r['result'].scan_result, proto.value):
-                if hasattr(getattr(r['result'].scan_result, proto.value).result, 'accepted_cipher_suites') and len(getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites):
-                    name,major,minor = getattr(r['result'].scan_result, proto.value).result.tls_version_used.name.split('_')
-                    protos.append(f'{name}v{major}.{minor}')
+            if len(accepted_ciphers(r['result'].scan_result, proto)):
+                name,major,minor = getattr(r['result'].scan_result, proto.value).result.tls_version_used.name.split('_')
+                protos.append(f'{name}v{major}.{minor}')
         if len(protos):
             a.append(r['print'] + '\t' + ', '.join(protos))
     printer('Deprecated Protocols', a, verbose)
@@ -215,11 +222,10 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         ciphers = []
         for proto in all_protos:
-            if hasattr(r['result'].scan_result, proto.value):
-                for cipher in getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites:
-                    name = cipher.cipher_suite.openssl_name
-                    if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name or getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites[0].cipher_suite.key_size <= 64:
-                        ciphers.append(name)
+            for cipher in accepted_ciphers(r['result'].scan_result, proto):
+                name = cipher.cipher_suite.openssl_name
+                if 'NULL' in name or 'EXP' in name or 'ADH' in name or 'AECDH' in name or cipher.cipher_suite.key_size <= 64:
+                    ciphers.append(name)
         if len(ciphers):
             # dedup ciphers
             ciphers = list(set(ciphers))
@@ -231,11 +237,10 @@ def CheckHosts(targets, verbose=False):
     for r in results:
         ciphers = []
         for proto in all_protos:
-            if hasattr(r['result'].scan_result, proto.value):
-                for cipher in getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites:
-                    name = cipher.cipher_suite.openssl_name
-                    if 'DES' in name or 'RC4' in name or 64 < getattr(r['result'].scan_result, proto.value).result.accepted_cipher_suites[0].cipher_suite.key_size <= 112:
-                        ciphers.append(name)
+            for cipher in accepted_ciphers(r['result'].scan_result, proto):
+                name = cipher.cipher_suite.openssl_name
+                if 'DES' in name or 'RC4' in name or 64 < cipher.cipher_suite.key_size <= 112:
+                    ciphers.append(name)
         if len(ciphers):
             # dedup ciphers
             ciphers = list(set(ciphers))
