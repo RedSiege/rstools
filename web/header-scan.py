@@ -259,12 +259,16 @@ def main():
 			targets.extend(NmapXmlToTargets(nxml.name))
 
 	if args.infile:
-		for target.strip in args.infile:
-			if ':' in target:
-				host, port = target.split(':')
-				targets.append((host,port))
-			else:
-				targets.append((target, '443'))
+		for infile in args.infile:
+			for line in infile:
+				target = line.strip()
+				if not target or target.startswith('#'):
+					continue
+				if ':' in target:
+					host, port = target.rsplit(':', 1)
+					targets.append((host, port))
+				else:
+					targets.append((target, '443'))
             
 	if len(targets) == 0:
 		print('No targets')
