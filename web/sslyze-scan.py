@@ -4,6 +4,18 @@ import argparse
 import datetime
 
 GROUPSIZE = 20
+EXPIRY_WARN_DAYS = 30  # flag certs expiring within this many days
+
+# sslyze's bundled trust stores include a legacy root cert with a negative
+# serial number, which makes cryptography emit a deprecation warning on load.
+# Silence only that specific warning; it's not about the hosts being scanned.
+import warnings
+from cryptography.utils import CryptographyDeprecationWarning
+warnings.filterwarnings(
+    'ignore',
+    message='Parsed a negative serial number',
+    category=CryptographyDeprecationWarning,
+)
 
 from sslyze import *
 import sslyze.errors
@@ -40,7 +52,7 @@ def printer(header, data, verbose):
     if len(data):
         print('\n' + header + ':')
         #sorts based on IP address
-        for s in sorted(data, key=lambda x: [int(i) if i.isdigit() else i for i in x.split(':')[0].split('.')]):
+        for s in sorted(data, key=lambda x: [(0, int(i), '') if i.isdigit() else (1, 0, i) for i in x.split(':')[0].split('.')]):
             print(s)
         print('Count: ' + str(len(data)))
     elif verbose:
@@ -68,6 +80,7 @@ def CheckHosts(targets, verbose=False):
     '''
 
     all_scan_requests = []
+    unresolved = []
 
     # Chunking so the scanner can be nuked and restarted
     for host,port in targets:
@@ -75,13 +88,23 @@ def CheckHosts(targets, verbose=False):
         if verbose:
             print(f'Testing {host}:{port}')
 
-        server_location = ServerNetworkLocation(host, port)
+        # ServerNetworkLocation does a DNS lookup on creation, so an
+        # unresolvable hostname raises here; skip it and keep going.
+        try:
+            server_location = ServerNetworkLocation(host, port)
+        except sslyze.errors.ServerHostnameCouldNotBeResolved:
+            unresolved.append(f'{host}:{port}')
+            continue
 
-        
-        # add a try catch here maybe?
         req = ServerScanRequest(server_location)
 
         all_scan_requests.append(req)
+
+    printer('Could Not Resolve Hostname', unresolved, verbose)
+
+    if not all_scan_requests:
+        print('\nNo resolvable targets to scan')
+        return
 
     scanner = Scanner()
 
@@ -173,15 +196,27 @@ def CheckHosts(targets, verbose=False):
             a.append(r['print'] + '\t' + ', '.join(protos))
     printer('Deprecated Protocols', a, verbose)
 
-    # Expired
-    a = []
+    # Expired / Not Yet Valid / Expiring Soon
+    # Checks every certificate deployment (e.g. RSA + ECDSA) and every cert in
+    # the served chain, not just the first leaf.
+    now = datetime.datetime.now(datetime.timezone.utc)
+    soon = now + datetime.timedelta(days=EXPIRY_WARN_DAYS)
+    expired, not_yet_valid, expiring = set(), set(), set()
     for r in results:
-        if datetime.datetime.now(datetime.UTC) > r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].not_valid_after_utc:
-            #stores date_time
-            expired_time=r['result'].scan_result.certificate_info.result.certificate_deployments[0].received_certificate_chain[0].not_valid_after_utc
-            #adds formatted date time
-            a.append(r['print']+'\t'+expired_time.strftime('%b %d, %Y'))
-    printer('Expired Certificates', a, verbose)
+        for dep in r['result'].scan_result.certificate_info.result.certificate_deployments:
+            for i, cert in enumerate(dep.received_certificate_chain):
+                label = 'leaf' if i == 0 else f'chain[{i}] {cert.subject.rfc4514_string()}'
+                not_after = cert.not_valid_after_utc
+                not_before = cert.not_valid_before_utc
+                if now > not_after:
+                    expired.add(f"{r['print']}\t{label}\t{not_after.strftime('%b %d, %Y')}")
+                elif now < not_before:
+                    not_yet_valid.add(f"{r['print']}\t{label}\tvalid from {not_before.strftime('%b %d, %Y')}")
+                elif not_after < soon:
+                    expiring.add(f"{r['print']}\t{label}\t{not_after.strftime('%b %d, %Y')}")
+    printer('Expired Certificates', list(expired), verbose)
+    printer('Not Yet Valid Certificates', list(not_yet_valid), verbose)
+    printer(f'Certificates Expiring Within {EXPIRY_WARN_DAYS} Days', list(expiring), verbose)
 
     # Weak Signature
     a = []
